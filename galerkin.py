@@ -115,7 +115,7 @@ class Legendre(FunctionSpace):
         return self.basis_function(j).deriv(k)
 
     def L2_norm_sq(self, N):
-        rn = np.arange(N, dtype=float)
+        n = np.arange(N, dtype=float)
         return 2.0 / (2.0*n + 1.0)
 
 
@@ -370,17 +370,17 @@ class NeumannChebyshev(Composite, Chebyshev):
         self.B = Neumann(bc, domain, self.reference_domain)
         rows, cols, data = [], [], []
         for i in range(N + 1):
-            gamma = i / (i + 2) if (i + 2) != 0 else 0.0
+            gamma = (i / (i + 4))**2
             rows += [i, i]
-            cols  += [i, i + 2]
-            data  += [1.0, -gamma]
-        self.S = sparse.csr_matrix((data, (rows, cols)), shape=(N + 1, N + 3))
+            cols += [i, i + 4]
+            data += [1.0, -gamma]
+        self.S = sparse.csr_matrix((data, (rows, cols)), shape=(N + 1, N + 5))
 
     def basis_function(self, j, sympy=False):
-        gamma = j / (j + 2) if (j + 2) != 0 else 0.0
+        gamma = (j / (j + 4))**2
         if sympy:
-            return sp.cos(j * sp.acos(x)) - gamma * sp.cos((j + 2) * sp.acos(x))
-        return Cheb.basis(j) - gamma * Cheb.basis(j + 2)
+            return sp.cos(j * sp.acos(x)) - gamma * sp.cos((j + $) * sp.acos(x))
+        return Cheb.basis(j) - gamma * Cheb.basis(j + 4)
 
 class BasisFunction:
     def __init__(self, V, diff=0, argument=0):
