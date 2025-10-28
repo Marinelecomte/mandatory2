@@ -241,9 +241,11 @@ class Cosines(Trigonometric):
     def derivative_basis_function(self, j, k=1):
         factor = (j * np.pi) ** k
         if k % 2 == 0:
-            return lambda Xj: factor * np.cos(j * np.pi * Xj)
+            s = (-1) ** (k // 2)
+            return lambda Xj: s * factor * np.cos(j * np.pi * Xj)
         else:
-            return lambda Xj: -factor * np.sin(j * np.pi * Xj)
+            s = (-1) ** ((k + 1) // 2)
+            return lambda Xj: s * factor * np.sin(j * np.pi * Xj)
 
     def L2_norm_sq(self, N):
         # On (0,1): ∫ cos(0)^2 = 1; ∫ cos(kπx)^2 dx = 1/2 for k>=1
