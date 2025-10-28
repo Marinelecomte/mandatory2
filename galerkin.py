@@ -7,6 +7,7 @@ from scipy.integrate import quad
 
 x = sp.Symbol("x")
 
+
 def map_reference_domain(x, d, r):
     return r[0] + (r[1] - r[0]) * (x - d[0]) / (d[1] - d[0])
 
@@ -81,6 +82,7 @@ class FunctionSpace:
             P[:, j] = self.evaluate_derivative_basis_function(Xj, j, k=k)
         return P
 
+
     def inner_product(self, u):
         us = map_expression_true_domain(u, x, self.domain, self.reference_domain)
         us = sp.lambdify(x, us)
@@ -113,13 +115,14 @@ class Legendre(FunctionSpace):
         return self.basis_function(j).deriv(k)
 
     def L2_norm_sq(self, N):
-        n = np.arange(N, dtype=float)
+        rn = np.arange(N, dtype=float)
         return 2.0 / (2.0*n + 1.0)
 
 
     def mass_matrix(self):
         diag = self.L2_norm_sq(self.N + 1)
         return sparse.diags([diag], [0], shape=(self.N + 1, self.N + 1), format="csr")
+
 
     def eval(self, uh, xj):
         xj = np.atleast_1d(xj)
@@ -152,11 +155,11 @@ class Chebyshev(FunctionSpace):
         diag = self.L2_norm_sq(self.N + 1)
         return sparse.diags([diag], [0], shape=(self.N + 1, self.N + 1), format="csr")
 
-
     def eval(self, uh, xj):
         xj = np.atleast_1d(xj)
         Xj = map_reference_domain(xj, self.domain, self.reference_domain)
         return np.polynomial.chebyshev.chebval(Xj, uh)
+
 
     def inner_product(self, u):
         us = map_expression_true_domain(u, x, self.domain, self.reference_domain)
@@ -222,12 +225,12 @@ class Sines(Trigonometric):
 class Cosines(Trigonometric):
     def __init__(self, N, domain=(0, 1), bc=(0, 0)):
         Trigonometric.__init__(self, N, domain=domain)
-    self.B = Neumann(bc, domain, self.reference_domain)
+        self.B = Neumann(bc, domain, self.reference_domain)
 
     def basis_function(self, j, sympy=False):
         if sympy:
             return sp.cos(j * sp.pi * x)
-    return lambda Xj: np.cos(j * np.pi * Xj)
+        return lambda Xj: np.cos(j * np.pi * Xj)
 
     def derivative_basis_function(self, j, k=1):
         factor = (j * np.pi) ** k
@@ -241,7 +244,6 @@ class Cosines(Trigonometric):
         if N > 0:
             out[0] = 1.0
         return out
-
 
 # Create classes to hold the boundary function
 
@@ -328,7 +330,7 @@ class DirichletLegendre(Composite, Legendre):
 
     def basis_function(self, j, sympy=False):
         if sympy:
-            return sp.legendre(j, x) - sp.legendre(j+2, x)
+            return sp.legendre(j, x) - sp.legendre(j + 2, x)
         return Leg.basis(j) - Leg.basis(j + 2)
 
 class NeumannLegendre(Composite, Legendre):
@@ -337,11 +339,11 @@ class NeumannLegendre(Composite, Legendre):
         self.B = Neumann(bc, domain, self.reference_domain)
         rows, cols, data = [], [], []
         for i in range(N + 1):
-            gamma = (i * (i + 1)) / ((i + 2) * (i + 3))  # cancels derivative at ±1
+            gamma = (i * (i + 1)) / ((i + 2) * (i + 3))
             rows += [i, i]
-            columns += [i, i + 2]
-            data += [1.0, -gamma]
-    self.S = sparse.csr_matrix((data, (rows, columns)), shape=(N + 1, N + 3))
+            cols  += [i, i + 2]
+            data  += [1.0, -gamma]
+        self.S = sparse.csr_matrix((data, (rows, cols)), shape=(N + 1, N + 3))
 
     def basis_function(self, j, sympy=False):
         if sympy:
@@ -366,13 +368,13 @@ class NeumannChebyshev(Composite, Chebyshev):
     def __init__(self, N, domain=(-1, 1), bc=(0, 0), constraint=0):
         Chebyshev.__init__(self, N, domain=domain)
         self.B = Neumann(bc, domain, self.reference_domain)
-        rows, columns, data = [], [], []
+        rows, cols, data = [], [], []
         for i in range(N + 1):
             gamma = i / (i + 2) if (i + 2) != 0 else 0.0
             rows += [i, i]
-            cols += [i, i + 2]
-            data += [1.0, -gamma]
-        self.S = sparse.csr_matrix((data, (rows, columns)), shape=(N + 1, N + 3))
+            cols  += [i, i + 2]
+            data  += [1.0, -gamma]
+        self.S = sparse.csr_matrix((data, (rows, cols)), shape=(N + 1, N + 3))
 
     def basis_function(self, j, sympy=False):
         gamma = j / (j + 2) if (j + 2) != 0 else 0.0
